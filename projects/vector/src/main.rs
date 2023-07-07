@@ -1,3 +1,7 @@
+pub mod enum_vector;
+
+use crate::enum_vector::create_enum_vector;
+
 fn main() {
     let mut v: Vec<i32> = Vec::new();
 
@@ -28,6 +32,8 @@ fn main() {
     iterate_vec_and_mutating(&mut v);
 
     iterate_vec(&v);
+
+    create_enum_vector();
 }
 
 fn iterate_vec(v: &Vec<i32>) {
