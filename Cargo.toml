@@ -1,7 +1,3 @@
 [workspace]
-
-members = [
-    "projects/*",
-    "packages/*",
-    "playground"
-]
+members = ["projects/*", "packages/*", "playground"]
+resolver = "1"

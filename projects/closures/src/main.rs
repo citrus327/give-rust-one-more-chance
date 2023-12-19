@@ -1,69 +1,91 @@
-#[derive(Debug, Copy, PartialEq, Clone)]
-enum ShirtColor {
-    Red,
-    Blue,
+use std::any;
+
+mod inventory;
+
+struct Cacher<T, E>
+where
+    T: Fn(E) -> E,
+    E: Copy,
+{
+    query: T,
+    value: Option<E>,
 }
 
-struct Inventory {
-    shirts: Vec<ShirtColor>,
-}
-
-impl Inventory {
-    fn giveaway(&mut self, user_preference: Option<ShirtColor>) -> ShirtColor {
-        let target_shirt = user_preference.unwrap_or_else(|| self.most_stocked());
-
-        if let Some(index) = self
-            .shirts
-            .iter()
-            .position(|&target| target == target_shirt)
-        {
-            self.shirts.remove(index);
-        }
-
-        target_shirt
+impl<T, E> Cacher<T, E>
+where
+    T: Fn(E) -> E,
+    E: Copy,
+{
+    fn new(query: T) -> Cacher<T, E> {
+        Cacher { query, value: None }
     }
 
-    fn most_stocked(&self) -> ShirtColor {
-        let mut num_red = 0;
-        let mut num_blue = 0;
-
-        for color in &self.shirts {
-            match color {
-                ShirtColor::Blue => num_blue += 1,
-                ShirtColor::Red => num_red += 1,
+    // 先查询缓存值 `self.value`，若不存在，则调用 `query` 加载
+    fn value(&mut self, arg: E) -> E {
+        match self.value {
+            Some(v) => v,
+            None => {
+                let v = (self.query)(arg);
+                self.value = Some(v);
+                v
             }
         }
-        let result = if num_red >= num_blue {
-            ShirtColor::Red
-        } else {
-            ShirtColor::Blue
-        };
-
-        result
     }
 }
 
-fn main() {
-    let mut store = Inventory {
-        shirts: vec![
-            ShirtColor::Red,
-            ShirtColor::Red,
-            ShirtColor::Blue,
-            ShirtColor::Blue,
-        ],
+fn e1() {
+    inventory::run()
+}
+
+fn e2() {
+    let a_typed_closure = |x: i32, y: i32| -> i32 { x + y };
+    println!("a_typed_closure(2, 3): {}", a_typed_closure(2, 3));
+}
+
+fn e3() {
+    let example_closure = |x| x;
+    let s = example_closure(String::from("hello"));
+    // let n = example_closure(5); // ERROR
+}
+
+fn auto_borrowing() {
+    let x = 42;
+
+    // 通过引用捕获的闭包（自动借用）
+    let closure_ref = || println!("x is {}", x);
+    closure_ref();
+
+    // 通过值捕获的闭包（自动借用）
+    let closure_val = || {
+        let y = x + 1;
+        println!("y is {}", y);
+    };
+    closure_val();
+}
+
+#[test]
+fn fnonce() {
+    fn fn_once<F>(func: F)
+    where
+        F: Fn(usize) -> bool,
+    {
+        println!("{}", func(3));
+    }
+
+    let x = vec![1, 2, 3];
+    fn_once(|z| z == x.len());
+    fn_once(|z| z == x.len());
+}
+
+#[test]
+fn after_move() {
+    let closure = |mut v: Vec<i32>| {
+        println!("vec length, {}", v.len());
+        v.push(2);
+        println!("vec length, {}", v.len());
     };
 
-    let user_pref1 = Some(ShirtColor::Red);
-    let giveaway1 = store.giveaway(user_pref1);
-    println!(
-        "The user with preference {:?} gets {:?}",
-        user_pref1, giveaway1
-    );
-
-    let user_pref2 = None;
-    let giveaway2 = store.giveaway(user_pref2);
-    println!(
-        "The user with preference {:?} gets {:?}",
-        user_pref2, giveaway2
-    );
+    let vec = vec![1, 2, 3];
 }
+
+fn main() {}
